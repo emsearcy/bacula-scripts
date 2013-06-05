@@ -38,7 +38,7 @@ def main():
 
          # Delete past-retention volumes
          if (vol['VolStatus'] == 'Purged' or
-            (vol['VolStatus'] == 'Error' and vol['LastWritten'] + timedelta(seconds=volume['VolRetention']) < datetime.now())):
+            (vol['VolStatus'] == 'Error' and vol['LastWritten'] + timedelta(seconds=vol['VolRetention']) < datetime.now())):
             print "[%s] Destroying %s volume %s..." % (datetime.now(), vol['VolStatus'], vol['VolumeName'])
             delwormfile(vol, device)
 

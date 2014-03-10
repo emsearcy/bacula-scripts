@@ -31,14 +31,37 @@ def main():
       incrmedia = getmedia('IncrWorm')
       for vol in fullmedia + diffmedia + incrmedia:
          # Commit to WORM state
-         if ((vol['VolStatus'] == 'Used' or vol['VolStatus'] == 'Read-Only' or vol['VolStatus'] == 'Error') and
-            os.access(device + vol['VolumeName'], os.W_OK)):
+         if (
+               # Statuses that mean we won't write again
+               (
+                  vol['VolStatus'] == 'Used' or
+                  vol['VolStatus'] == 'Read-Only' or
+                  (
+                     # Unwritten "Error" can be left writeable for purge
+                     vol['VolStatus'] == 'Error' and
+                     vol['LastWritten'] != None
+                  )
+               ) and
+               # We will be able to chmod the file
+               os.access(device + vol['VolumeName'], os.W_OK)
+            ):
             print "[%s] Committing %s volume %s to WORM..." % (datetime.now(), vol['VolStatus'], vol['VolumeName'])
             committoworm(vol, device)
 
          # Delete past-retention volumes
-         if (vol['VolStatus'] == 'Purged' or
-            (vol['VolStatus'] == 'Error' and vol['LastWritten'] + timedelta(seconds=vol['VolRetention']) < datetime.now())):
+         if (
+               # Statuses to delete
+               vol['VolStatus'] == 'Purged' or
+               (
+                  vol['VolStatus'] == 'Error' and
+                  (
+                     # "Error" volumes won't be auto-purged, so we can estimate
+                     # retention time, unless it was never written to
+                     vol['LastWritten'] = None or
+                     vol['LastWritten'] + timedelta(seconds=vol['VolRetention']) < datetime.now()
+                  )
+               )
+            ):
             print "[%s] Destroying %s volume %s..." % (datetime.now(), vol['VolStatus'], vol['VolumeName'])
             delwormfile(vol, device)
 

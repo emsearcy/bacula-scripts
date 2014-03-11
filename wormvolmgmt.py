@@ -57,7 +57,7 @@ def main():
                   (
                      # "Error" volumes won't be auto-purged, so we can estimate
                      # retention time, unless it was never written to
-                     vol['LastWritten'] = None or
+                     vol['LastWritten'] == None or
                      vol['LastWritten'] + timedelta(seconds=vol['VolRetention']) < datetime.now()
                   )
                )
